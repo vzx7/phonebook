@@ -5,27 +5,12 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
-	"time"
+	"strings"
 )
-
-type Entry struct {
-	Name    string
-	Surname string
-	Tel     string
-}
 
 var data = []Entry{}
 var MIN = 0
 var MAX = 26
-
-func search(key string) *Entry {
-	for i, v := range data {
-		if v.Tel == key {
-			return &data[i]
-		}
-	}
-	return nil
-}
 
 func list() {
 	for _, v := range data {
@@ -58,38 +43,63 @@ func populate(n int, s []Entry) {
 		name := getString(4)
 		surname := getString(5)
 		n := strconv.Itoa(random(100, 199))
-		data = append(data, Entry{name, surname, n})
+		data = append(data, Entry{name, surname, n, getString(7)})
 	}
 }
 
 func main() {
 	arguments := os.Args
 	if len(arguments) == 1 {
-		fmt.Println("Usage: search|list <arguments>")
+		fmt.Println("Usage: insert|delete|search|list <arguments>")
 		return
 	}
 
-	SEED := time.Now().Unix()
-	rand.New(rand.NewSource(SEED))
+	if err := SetCSV(); err != nil {
+		fmt.Println(err)
+	}
 
-	// How many records to insert
-	n := 100
-	populate(n, data)
-	fmt.Printf("Data has %d entries.\n", len(data))
+	fileInfo, err := os.Stat(CSVFILE)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	mode := fileInfo.Mode()
+	if !mode.IsRegular() {
+		fmt.Println(CSVFILE, "not regular file!")
+		return
+	}
+
+	err = ReadCSVFile(CSVFILE)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = CreateIndex()
+	if err != nil {
+		fmt.Println("Cannot create index")
+	}
 
 	// Differentiate between the commands
 	switch arguments[1] {
 	case "search":
 		if len(arguments) != 3 {
-			fmt.Println("Usage: search Tel number")
+			fmt.Println("Usage: search Number")
 			return
 		}
-		temp := search(arguments[2])
+		t := strings.ReplaceAll(arguments[2], "-", "")
+		if !MatchTel(t) {
+			fmt.Println("Not a valid teoephone number:", t)
+			return
+		}
+		temp := Search(t)
 		if temp == nil {
-			fmt.Println("Entry not found:", arguments[2])
+			fmt.Println("Number not found:", t)
 			return
 		}
-		fmt.Println(*temp)
+		fmt.Println(t)
 	case "list":
 		list()
 	default:
