@@ -2,50 +2,9 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
-	"strconv"
 	"strings"
 )
-
-var data = []Entry{}
-var MIN = 0
-var MAX = 26
-
-func list() {
-	for _, v := range data {
-		fmt.Println(v)
-	}
-}
-
-func random(min, max int) int {
-	return rand.Intn(max-min) + min
-}
-
-func getString(l int64) string {
-	startChar := "A"
-	temp := ""
-	var i int64 = 1
-	for {
-		myRand := random(MIN, MAX)
-		newChar := string(startChar[0] + byte(myRand))
-		temp = temp + newChar
-		if i == l {
-			break
-		}
-		i++
-	}
-	return temp
-}
-
-func populate(n int, s []Entry) {
-	for i := 0; i < n; i++ {
-		name := getString(4)
-		surname := getString(5)
-		n := strconv.Itoa(random(100, 199))
-		data = append(data, Entry{name, surname, n, getString(7)})
-	}
-}
 
 func main() {
 	arguments := os.Args
@@ -91,7 +50,7 @@ func main() {
 		}
 		t := strings.ReplaceAll(arguments[2], "-", "")
 		if !MatchTel(t) {
-			fmt.Println("Not a valid teoephone number:", t)
+			fmt.Println("Not a valid telephone number:", t)
 			return
 		}
 		temp := Search(t)
@@ -99,9 +58,41 @@ func main() {
 			fmt.Println("Number not found:", t)
 			return
 		}
-		fmt.Println(t)
+		fmt.Println(*temp)
+	case "delete":
+		if len(arguments) != 3 {
+			fmt.Println("Usage: delete Number")
+			return
+		}
+		t := strings.ReplaceAll(arguments[2], "-", "")
+		if !MatchTel(t) {
+			fmt.Println("Not a valid telephone number:", t)
+			return
+		}
+		err := DeleteEntry(t)
+		if err != nil {
+			fmt.Println(err)
+		}
+	case "insert":
+		if len(arguments) != 5 {
+			fmt.Println("Usage: insert Name Surname Telephone")
+			return
+		}
+		t := strings.ReplaceAll(arguments[4], "-", "")
+		if !MatchTel(t) {
+			fmt.Println("Not a valid telephone number:", t)
+			return
+		}
+		temp := InitS(arguments[2], arguments[3], t)
+		if temp != nil {
+			err = Insert(temp)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
 	case "list":
-		list()
+		List()
 	default:
 		fmt.Println("Not a valid option")
 	}

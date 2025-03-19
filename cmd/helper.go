@@ -52,10 +52,10 @@ func ReadCSVFile(filepath string) error {
 }
 
 func CreateIndex() error {
-	index := make(map[string]int)
+	INDEX = make(map[string]int)
 	for i, k := range DATA {
 		key := k.Tel
-		index[key] = i
+		INDEX[key] = i
 	}
 	return nil
 }
@@ -74,6 +74,48 @@ func Search(key string) *Entry {
 	DATA[i].LastAccess = strconv.FormatInt(time.Now().Unix(), 10)
 	_ = saveCSVFile(CSVFILE)
 	return &DATA[i]
+}
+
+func DeleteEntry(key string) error {
+	i, ok := INDEX[key]
+	if !ok {
+		return fmt.Errorf("%s cannot be found", key)
+	}
+	DATA = append(DATA[:i], DATA[i+1:]...)
+	delete(INDEX, key)
+	err := saveCSVFile(CSVFILE)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func InitS(N, S, T string) *Entry {
+	if T == "" || S == "" {
+		return nil
+	}
+	LastAccess := strconv.FormatInt(time.Now().Unix(), 10)
+	return &Entry{Name: N, Surname: S, Tel: T, LastAccess: LastAccess}
+}
+
+func Insert(pS *Entry) error {
+	_, ok := INDEX[(*pS).Tel]
+	if ok {
+		return fmt.Errorf("%s allredy exist", pS.Tel)
+	}
+	DATA = append(DATA, *pS)
+	_ = CreateIndex()
+	err := saveCSVFile(CSVFILE)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func List() {
+	for _, v := range DATA {
+		fmt.Println(v)
+	}
 }
 
 func saveCSVFile(filepath string) error {
