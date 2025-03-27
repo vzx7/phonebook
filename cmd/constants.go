@@ -7,9 +7,11 @@ type Entry struct {
 	LastAccess string
 }
 
+type Phonebook []Entry
+
 var CSVFILE = "/tmp/csv.data"
 
-var DATA = []Entry{}
+var DATA = Phonebook{}
 
 var INDEX map[string]int
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -129,6 +130,7 @@ func Insert(pS *Entry) error {
 }
 
 func List() {
+	sort.Sort(Phonebook(DATA))
 	for _, v := range DATA {
 		fmt.Println(v)
 	}
@@ -147,4 +149,19 @@ func saveCSVFile(filepath string) error {
 	}
 	csvwrite.Flush()
 	return nil
+}
+
+func (p Phonebook) Len() int {
+	return len(p)
+}
+
+func (p Phonebook) Less(i, j int) bool {
+	if p[i].Surname == p[j].Surname {
+		return p[i].Name < p[j].Name
+	}
+	return p[i].Surname < p[j].Surname
+}
+
+func (p Phonebook) Swap(i, j int) {
+	p[i], p[j] = p[j], p[i]
 }
