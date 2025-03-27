@@ -10,6 +10,11 @@ import (
 )
 
 func SetCSV() error {
+	filepath := os.Getenv("PHONEBOOK")
+	if filepath != "" {
+		CSVFILE = filepath
+	}
+
 	_, err := os.Stat(CSVFILE)
 	if err != nil {
 		fmt.Println("Creating", CSVFILE)
@@ -20,6 +25,17 @@ func SetCSV() error {
 		}
 		f.Close()
 	}
+
+	fileinfo, err := os.Stat(CSVFILE)
+	if err != nil {
+		return err
+	}
+
+	mode := fileinfo.Mode()
+	if !mode.IsRegular() {
+		return fmt.Errorf("%s nat a regular file", CSVFILE)
+	}
+
 	return nil
 }
 
