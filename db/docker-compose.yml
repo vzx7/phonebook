@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=xz
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=master
+    volumes:
+      - ./postgres:/var/lib/postgresql/data/
+      - ./create_table.sql:/docker-entrypoint-initdb.d/create_table.sql
+    networks:
+      - psql
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres:
+
+networks:
+  psql:
+    driver: bridge

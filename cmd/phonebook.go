@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/vzx7/phonebook/pkg/db"
 )
 
 func main() {
@@ -12,6 +14,8 @@ func main() {
 		fmt.Println("Usage: insert|delete|search|list <arguments>")
 		return
 	}
+
+	db.Connect([]string{"", "localhost", "5432", "mtsouk", "pass", "master"})
 
 	if err := SetCSV(); err != nil {
 		fmt.Println(err)
