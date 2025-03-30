@@ -15,7 +15,7 @@ func main() {
 		return
 	}
 
-	db.Connect([]string{"", "localhost", "5432", "mtsouk", "pass", "master"})
+	db.Connect([]string{"", "localhost", "5437", "xz", "pass", "master"})
 
 	if err := SetCSV(); err != nil {
 		fmt.Println(err)
