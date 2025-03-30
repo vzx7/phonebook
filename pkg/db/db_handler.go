@@ -52,6 +52,26 @@ func AddUser(d UserData) int {
 	userID := userExist(d.UserName)
 	if userID != -1 {
 		fmt.Println("User already exist")
+		return -1
 	}
+	insertStatement := `insert into "users" ("username") 
+	values (${1})`
+	_, err = db.Exec(insertStatement, d.UserName)
+	if err != nil {
+		fmt.Println(err)
+		return -1
+	}
+	userID = userExist(d.UserName)
+	if userID == -1 {
+		return userID
+	}
+	insertStatement = `insert into "userdata" ("userid", "name", "surname", "description")
+	values ($1, $2, $3, $4)`
+	_, err = db.Exec(insertStatement, userID, d.Name, d.Surname, d.Description)
+	if err != nil {
+		fmt.Println("db.Exec()", err)
+		return -1
+	}
+
 	return userID
 }
