@@ -7,7 +7,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func exist(_username string) int {
+func userExist(_username string) int {
 	username := strings.ToLower(_username)
 
 	db, err := OpenConnection([]string{})
@@ -36,5 +36,22 @@ func exist(_username string) int {
 	}
 
 	defer rows.Close()
+	return userID
+}
+
+func AddUser(d UserData) int {
+	d.UserName = strings.ToLower(d.UserName)
+
+	db, err := OpenConnection([]string{})
+	if err != nil {
+		fmt.Println(err)
+		return -1
+	}
+	defer db.Close()
+
+	userID := userExist(d.UserName)
+	if userID != -1 {
+		fmt.Println("User already exist")
+	}
 	return userID
 }
