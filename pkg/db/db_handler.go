@@ -75,3 +75,38 @@ func AddUser(d UserData) int {
 
 	return userID
 }
+
+func DeleteUser(id int) error {
+	db, err := OpenConnection([]string{})
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	statment := fmt.Sprintf(`select "username" from "users" where id = %d`, id)
+	rows, err := db.Query(statment)
+	if err != nil {
+		return err
+	}
+	var username string
+	for rows.Next() {
+		err = rows.Scan(&username)
+		if err != nil {
+			return err
+		}
+	}
+	defer rows.Close()
+	if userExist(username) != id {
+		return fmt.Errorf("User with ID %d does not exist", id)
+	}
+	deletestatment := `delete from "userdata" where userid=$1`
+	_, err = db.Exec(deletestatment, id)
+	if err != nil {
+		return err
+	}
+	deletestatment = `delete from "users" where id=$1`
+	_, err = db.Exec(deletestatment, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
