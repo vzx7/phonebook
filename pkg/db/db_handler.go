@@ -1,162 +1,80 @@
 package db
 
 import (
+	"database/sql"
 	"errors"
-	"fmt"
 	"strings"
 
 	_ "github.com/lib/pq"
 )
 
-func userExist(_username string) int {
-	username := strings.ToLower(_username)
-
-	db, err := OpenConnection([]string{})
-	if err != nil {
-		fmt.Println(err)
-		return -1
+func userExist(db *sql.DB, username string) (int, error) {
+	username = strings.ToLower(username)
+	var userID int
+	err := db.QueryRow(`SELECT id FROM users WHERE username = $1`, username).Scan(&userID)
+	if err == sql.ErrNoRows {
+		return -1, nil
+	} else if err != nil {
+		return -1, err
 	}
-	defer db.Close()
-
-	userID := -1
-	statement := fmt.Sprintf(`SELECT "id" FROM "users" WHERE username = %s`, username)
-	rows, err := db.Query(statement)
-	if err != nil {
-		fmt.Println(err)
-		return -1
-	}
-
-	for rows.Next() {
-		var id int
-		err = rows.Scan(&id)
-		if err != nil {
-			fmt.Println("Scan", err)
-			return -1
-		}
-		userID = id
-	}
-
-	defer rows.Close()
-	return userID
+	return userID, nil
 }
 
-func AddUser(d UserData) int {
+func AddUser(db *sql.DB, d UserData) (int, error) {
 	d.UserName = strings.ToLower(d.UserName)
-
-	db, err := OpenConnection([]string{})
+	userID, err := userExist(db, d.UserName)
 	if err != nil {
-		fmt.Println(err)
-		return -1
+		return -1, err
 	}
-	defer db.Close()
-
-	userID := userExist(d.UserName)
 	if userID != -1 {
-		fmt.Println("User already exist")
-		return -1
+		return -1, errors.New("user already exists")
 	}
-	insertStatement := `insert into "users" ("username") 
-	values (${1})`
-	_, err = db.Exec(insertStatement, d.UserName)
+
+	insertStatement := `INSERT INTO users (username) VALUES ($1) RETURNING id`
+	err = db.QueryRow(insertStatement, d.UserName).Scan(&userID)
 	if err != nil {
-		fmt.Println(err)
-		return -1
+		return -1, err
 	}
-	userID = userExist(d.UserName)
-	if userID == -1 {
-		return userID
-	}
-	insertStatement = `insert into "userdata" ("userid", "name", "surname", "description")
-	values ($1, $2, $3, $4)`
+
+	insertStatement = `INSERT INTO userdata (userid, name, surname, description) VALUES ($1, $2, $3, $4)`
 	_, err = db.Exec(insertStatement, userID, d.Name, d.Surname, d.Description)
 	if err != nil {
-		fmt.Println("db.Exec()", err)
-		return -1
+		return -1, err
 	}
 
-	return userID
+	return userID, nil
 }
 
-func DeleteUser(id int) error {
-	db, err := OpenConnection([]string{})
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-	statement := fmt.Sprintf(`select "username" from "users" where id = %d`, id)
-	rows, err := db.Query(statement)
-	if err != nil {
-		return err
-	}
-	var username string
-	for rows.Next() {
-		err = rows.Scan(&username)
-		if err != nil {
-			return err
-		}
-	}
-	defer rows.Close()
-	if userExist(username) != id {
-		return fmt.Errorf("user with ID %d does not exist", id)
-	}
-	deleteStatement := `delete from "userdata" where userid=$1`
-	_, err = db.Exec(deleteStatement, id)
-	if err != nil {
-		return err
-	}
-	deleteStatement = `delete from "users" where id=$1`
-	_, err = db.Exec(deleteStatement, id)
-	if err != nil {
-		return err
-	}
-	return nil
+func DeleteUser(db *sql.DB, id int) error {
+	deleteStatement := `DELETE FROM userdata WHERE userid=$1; DELETE FROM users WHERE id=$1`
+	_, err := db.Exec(deleteStatement, id)
+	return err
 }
 
-func ListUsers() ([]UserData, error) {
-	db, err := OpenConnection([]string{})
+func ListUsers(db *sql.DB) ([]UserData, error) {
+	var users []UserData
+	query := `SELECT u.id, u.username, ud.name, ud.surname, ud.description 
+			FROM users u 
+			JOIN userdata ud ON u.id = ud.userid`
+	rows, err := db.Query(query)
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
-	Data := []UserData{}
-	statement := `select "id", "username", "name", "surname", "description" from "users", "userdata" where user.id = userdata.userId`
-	rows, err := db.Query(statement)
-	if err != nil {
-		return nil, err
-	}
-	for rows.Next() {
-		var id int
-		var username string
-		var name string
-		var surname string
-		var description string
-		err = rows.Scan(&id, &username, &name, &surname, &description)
-		if err != nil {
-			return Data, err
-		}
-		temp := UserData{ID: id, UserName: username, Name: name, Surname: surname, Description: description}
-		Data = append(Data, temp)
-	}
 	defer rows.Close()
-	return Data, nil
+
+	for rows.Next() {
+		var u UserData
+		if err := rows.Scan(&u.ID, &u.UserName, &u.Name, &u.Surname, &u.Description); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	return users, nil
 }
 
-func UpdateUser(d UserData) error {
-	db, err := OpenConnection([]string{})
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-	userId := userExist(d.UserName)
-	if userId == -1 {
-		return errors.New("user does not exist")
-	}
-	d.ID = userId
-	updateStatement := `update "userdata" set "name"=$1, "surname"=$2, "description"=$3, where "userId"=$4`
-	_, err = db.Exec(updateStatement, d.Name, d.Surname, d.Description, d.ID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func UpdateUser(db *sql.DB, d UserData) error {
+	d.UserName = strings.ToLower(d.UserName)
+	updateStatement := `UPDATE userdata SET name=$1, surname=$2, description=$3 WHERE userid=$4`
+	_, err := db.Exec(updateStatement, d.Name, d.Surname, d.Description, d.ID)
+	return err
 }
