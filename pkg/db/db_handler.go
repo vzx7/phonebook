@@ -18,8 +18,8 @@ func userExist(_username string) int {
 	defer db.Close()
 
 	userID := -1
-	statment := fmt.Sprintf(`SELECT "id" FROM "users" WHERE username = %s`, username)
-	rows, err := db.Query(statment)
+	statement := fmt.Sprintf(`SELECT "id" FROM "users" WHERE username = %s`, username)
+	rows, err := db.Query(statement)
 	if err != nil {
 		fmt.Println(err)
 		return -1
@@ -82,8 +82,8 @@ func DeleteUser(id int) error {
 		return err
 	}
 	defer db.Close()
-	statment := fmt.Sprintf(`select "username" from "users" where id = %d`, id)
-	rows, err := db.Query(statment)
+	statement := fmt.Sprintf(`select "username" from "users" where id = %d`, id)
+	rows, err := db.Query(statement)
 	if err != nil {
 		return err
 	}
@@ -98,15 +98,44 @@ func DeleteUser(id int) error {
 	if userExist(username) != id {
 		return fmt.Errorf("User with ID %d does not exist", id)
 	}
-	deletestatment := `delete from "userdata" where userid=$1`
-	_, err = db.Exec(deletestatment, id)
+	deleteStatement := `delete from "userdata" where userid=$1`
+	_, err = db.Exec(deleteStatement, id)
 	if err != nil {
 		return err
 	}
-	deletestatment = `delete from "users" where id=$1`
-	_, err = db.Exec(deletestatment, id)
+	deleteStatement = `delete from "users" where id=$1`
+	_, err = db.Exec(deleteStatement, id)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func ListUsers() ([]UserData, error) {
+	db, err := OpenConnection([]string{})
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+	Data := []UserData{}
+	statement := `select "id", "username", "name", "surname", "description" from "users", "userdata" where user.id = userdata.userId`
+	rows, err := db.Query(statement)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var id int
+		var username string
+		var name string
+		var surname string
+		var description string
+		err = rows.Scan(&id, &username, &name, &surname, &description)
+		if err != nil {
+			return Data, err
+		}
+		temp := UserData{ID: id, UserName: username, Name: name, Surname: surname, Description: description}
+		Data = append(Data, temp)
+	}
+	defer rows.Close()
+	return Data, nil
 }
