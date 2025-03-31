@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -96,7 +97,7 @@ func DeleteUser(id int) error {
 	}
 	defer rows.Close()
 	if userExist(username) != id {
-		return fmt.Errorf("User with ID %d does not exist", id)
+		return fmt.Errorf("user with ID %d does not exist", id)
 	}
 	deleteStatement := `delete from "userdata" where userid=$1`
 	_, err = db.Exec(deleteStatement, id)
@@ -138,4 +139,24 @@ func ListUsers() ([]UserData, error) {
 	}
 	defer rows.Close()
 	return Data, nil
+}
+
+func UpdateUser(d UserData) error {
+	db, err := OpenConnection([]string{})
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	userId := userExist(d.UserName)
+	if userId == -1 {
+		return errors.New("user does not exist")
+	}
+	d.ID = userId
+	updateStatement := `update "userdata" set "name"=$1, "surname"=$2, "description"=$3, where "userId"=$4`
+	_, err = db.Exec(updateStatement, d.Name, d.Surname, d.Description, d.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
