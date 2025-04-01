@@ -12,7 +12,7 @@ func OpenConnection(arguments []string) (*sql.DB, error) {
 	_port := PORT
 	_user := BD_USER
 	_password := BD_PASSWORD
-	_dbName := arguments[5]
+	_dbName := BD_NAME
 	if len(arguments) != 5 {
 		fmt.Println("The arguments are not transferred to the data connection function, constants will be used to connect to the database ...")
 	} else {

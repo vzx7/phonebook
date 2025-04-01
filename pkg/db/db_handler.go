@@ -46,8 +46,12 @@ func AddUser(db *sql.DB, d UserData) (int, error) {
 }
 
 func DeleteUser(db *sql.DB, id int) error {
-	deleteStatement := `DELETE FROM userdata WHERE userid=$1; DELETE FROM users WHERE id=$1`
-	_, err := db.Exec(deleteStatement, id)
+	_, err := db.Exec(`DELETE FROM userdata WHERE userid=$1`, id)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`DELETE FROM users WHERE id=$1`, id)
 	return err
 }
 
@@ -77,4 +81,19 @@ func UpdateUser(db *sql.DB, d UserData) error {
 	updateStatement := `UPDATE userdata SET name=$1, surname=$2, description=$3 WHERE userid=$4`
 	_, err := db.Exec(updateStatement, d.Name, d.Surname, d.Description, d.ID)
 	return err
+}
+
+func GetUser(db *sql.DB, id int) (*UserData, error) {
+	var user UserData
+	query := `SELECT u.id, u.username, ud.name, ud.surname, ud.description 
+			FROM users u 
+			JOIN userdata ud ON u.id = ud.userid 
+			WHERE u.id = $1`
+	err := db.QueryRow(query, id).Scan(&user.ID, &user.UserName, &user.Name, &user.Surname, &user.Description)
+	if err == sql.ErrNoRows {
+		return nil, errors.New("user not found")
+	} else if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }

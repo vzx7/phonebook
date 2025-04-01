@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"strings"
@@ -14,8 +15,6 @@ func main() {
 		fmt.Println("Usage: insert|delete|search|list <arguments>")
 		return
 	}
-
-	db.Connect([]string{"", "localhost", "5437", "xz", "pass", "master"})
 
 	if err := SetCSV(); err != nil {
 		fmt.Println(err)
@@ -100,4 +99,87 @@ func main() {
 	default:
 		fmt.Println("Not a valid option")
 	}
+	dbWork()
+}
+
+func dbWork() {
+	dbConn, err := db.OpenConnection([]string{})
+	if err != nil {
+		fmt.Println("Ошибка подключения к БД:", err)
+		return
+	}
+	defer dbConn.Close()
+	randomUsername := RandomString(5)
+	id, err := addUser(dbConn, randomUsername)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Printf("Пользователь: %s добавлен c id: %d\n", randomUsername, id)
+	}
+	err = listUser(dbConn)
+	if err != nil {
+		fmt.Println(err)
+	}
+	u, err := db.GetUser(dbConn, id)
+	if err != nil {
+		fmt.Println(err)
+	}
+	u.Description = "Совершенно новый пользователь"
+	err = updateUser(dbConn, u)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Printf("Пользователь: %v обновнлен\n", u)
+	}
+	err = deleteUser(dbConn, u.ID)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Printf("Пользователь c id: %d успешно удален\n", u.ID)
+	}
+}
+
+func listUser(dbConn *sql.DB) error {
+	data, err := db.ListUsers(dbConn)
+	if err != nil {
+		return fmt.Errorf("oшибка получения списка пользователей: %v", err)
+	}
+
+	for _, v := range data {
+		fmt.Println(v)
+	}
+
+	return nil
+}
+
+func addUser(dbConn *sql.DB, userName string) (int, error) {
+	t := db.UserData{
+		UserName:    userName,
+		Name:        "Vasilii",
+		Surname:     "Zaz",
+		Description: "This is me!",
+	}
+
+	id, err := db.AddUser(dbConn, t)
+	if err != nil {
+		return -1, fmt.Errorf("oшибка добавления пользователя: %s: %v", userName, err)
+	}
+
+	return id, nil
+}
+
+func deleteUser(dbConn *sql.DB, id int) error {
+	err := db.DeleteUser(dbConn, id)
+	if err != nil {
+		return fmt.Errorf("oшибка удаления пользователя c id: %d: %v", id, err)
+	}
+	return nil
+}
+
+func updateUser(dbConn *sql.DB, userData *db.UserData) error {
+	err := db.UpdateUser(dbConn, *userData)
+	if err != nil {
+		return fmt.Errorf("oшибка обновления пользователя c id: %d: %v", userData, err)
+	}
+	return nil
 }

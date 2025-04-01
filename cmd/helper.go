@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"math/rand"
 	"os"
 	"regexp"
 	"sort"
@@ -149,6 +150,21 @@ func saveCSVFile(filepath string) error {
 	}
 	csvwrite.Flush()
 	return nil
+}
+
+func random(min, max int) int {
+	return rand.Intn(max-min) + min
+}
+
+func RandomString(lenght uint64) string {
+	startChar := "A"
+	rs := ""
+	for i := uint64(0); i < lenght; i++ {
+		myRand := random(MIN, MAX)
+		newChar := string(startChar[0] + byte(myRand))
+		rs += newChar
+	}
+	return rs
 }
 
 func (p Phonebook) Len() int {

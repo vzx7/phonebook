@@ -9,11 +9,11 @@ type Entry struct {
 
 type Phonebook []Entry
 
+var INDEX map[string]int
+var DATA = Phonebook{}
 var CSVFILE = "/tmp/csv.data"
 
-var DATA = Phonebook{}
-
-var INDEX map[string]int
-
-var MIN = 0
-var MAX = 26
+const (
+	MIN = 0
+	MAX = 26
+)

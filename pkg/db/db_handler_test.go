@@ -41,12 +41,42 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	mockDB, mock, _ := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("Error initializing sqlmock: %s", err)
+	}
 	defer mockDB.Close()
 
-	mock.ExpectExec(`DELETE FROM userdata WHERE userid=\$1; DELETE FROM users WHERE id=\$1`).WithArgs(1).WillReturnResult(sqlmock.NewResult(1, 1))
-	err := DeleteUser(mockDB, 1)
+	mock.ExpectExec(`DELETE FROM userdata WHERE userid=\$1`).WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec(`DELETE FROM users WHERE id=\$1`).WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
+
+	err = DeleteUser(mockDB, 1)
 	if err != nil {
-		t.Errorf("Ошибка при удалении пользователя: %v", err)
+		t.Errorf("Unexpected error: %s", err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("Unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetUser(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("Error initializing sqlmock: %s", err)
+	}
+	defer mockDB.Close()
+
+	mock.ExpectQuery(`SELECT u.id, u.username, ud.name, ud.surname, ud.description FROM users u JOIN userdata ud ON u.id = ud.userid WHERE u.id = \$1`).WithArgs(1).WillReturnRows(sqlmock.NewRows([]string{"id", "username", "name", "surname", "description"}).AddRow(1, "johndoe", "John", "Doe", "Test user"))
+
+	user, err := GetUser(mockDB, 1)
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+	if user == nil {
+		t.Errorf("Expected user data, got nil")
+	}
+	if user.ID != 1 || user.UserName != "johndoe" || user.Name != "John" || user.Surname != "Doe" || user.Description != "Test user" {
+		t.Errorf("User data does not match expected values")
 	}
 }
