@@ -179,7 +179,7 @@ func deleteUser(dbConn *sql.DB, id int) error {
 func updateUser(dbConn *sql.DB, userData *db.UserData) error {
 	err := db.UpdateUser(dbConn, *userData)
 	if err != nil {
-		return fmt.Errorf("oшибка обновления пользователя c id: %d: %v", userData, err)
+		return fmt.Errorf("oшибка обновления пользователя c id: %d: %v", userData.ID, err)
 	}
 	return nil
 }
