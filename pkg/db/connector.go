@@ -6,7 +6,11 @@ import (
 	"strconv"
 )
 
-// Open DB Connect
+/*
+OpenConnection - функция для подключения к БД postgres.
+Если не передан аргумент []string, с данными для подключения,
+то будет использован данные с pkg/db/constants.go
+*/
 func OpenConnection(arguments []string) (*sql.DB, error) {
 	_host := HOST
 	_port := PORT
