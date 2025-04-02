@@ -103,7 +103,7 @@ func main() {
 }
 
 func dbWork() {
-	dbConn, err := db.OpenConnection([]string{})
+	dbConn, err := db.OpenConnection(db.ConnectSet{})
 	if err != nil {
 		fmt.Println("Ошибка подключения к БД:", err)
 		return

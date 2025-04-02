@@ -3,7 +3,6 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"strconv"
 )
 
 /*
@@ -11,26 +10,33 @@ OpenConnection - функция для подключения к БД postgres.
 Если не передан аргумент []string, с данными для подключения,
 то будет использован данные с pkg/db/constants.go
 */
-func OpenConnection(arguments []string) (*sql.DB, error) {
-	_host := HOST
-	_port := PORT
-	_user := BD_USER
-	_password := BD_PASSWORD
-	_dbName := BD_NAME
-	if len(arguments) != 5 {
-		fmt.Println("The arguments are not transferred to the data connection function, constants will be used to connect to the database ...")
-	} else {
-		_host = arguments[0]
+func OpenConnection(connectSet ConnectSet) (*sql.DB, error) {
+	_host := CONNECT_SET.Host
+	_port := CONNECT_SET.Port
+	_user := CONNECT_SET.DBUser
+	_password := CONNECT_SET.DBPassword
+	_dbName := CONNECT_SET.DBName
 
-		port, err := strconv.Atoi(arguments[1])
-		if err != nil {
-			return nil, err
-		}
+	if connectSet.Host == "" {
+		fmt.Println("The host is not transferred to the data connection function, constants will be used to connect to the database ...")
+		_host = CONNECT_SET.Host
+	}
 
-		_port = port
-		_user = arguments[2]
-		_password = arguments[3]
-		_dbName = arguments[4]
+	if connectSet.Port == 0 {
+		fmt.Println("The port is not transferred to the data connection function, constants will be used to connect to the database ...")
+		_port = CONNECT_SET.Port
+	}
+	if connectSet.DBName == "" {
+		fmt.Println("The BDName is not transferred to the data connection function, constants will be used to connect to the database ...")
+		_dbName = CONNECT_SET.DBName
+	}
+	if connectSet.DBUser == "" {
+		fmt.Println("The DBUser is not transferred to the data connection function, constants will be used to connect to the database ...")
+		_user = CONNECT_SET.DBUser
+	}
+	if connectSet.DBPassword == "" {
+		fmt.Println("The DBPassword is not transferred to the data connection function, constants will be used to connect to the database ...")
+		_password = CONNECT_SET.DBPassword
 	}
 
 	conn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", _host, _port, _user, _password, _dbName)
